@@ -215,6 +215,9 @@ user code."
   ;; The key sequence can be entered in any order by setting
   ;; the variable `evil-escape-unordered-key-sequence' to non nil.
   (setq evil-escape-unordered-key-sequence t)
+
+  ;; Make emacs follow symlinks without prompting
+  (setq vc-follow-symlinks t)
   )
 
 (defun dotspacemacs/user-config ()
