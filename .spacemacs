@@ -278,7 +278,7 @@ layers configuration. You are free to put any user code."
 (setq nrepl-hide-special-buffers t)
 
 ;; Prevent the auto-display of the REPL buffer in a separate window after connection
-;; (setq cider-repl-pop-to-buffer-on-connect nil)
+(setq cider-repl-pop-to-buffer-on-connect t)
 
 ;; Stop the error buffer from popping up while working in buffers other than the REPL:
 ;; (setq cider-show-error-buffer nil)
