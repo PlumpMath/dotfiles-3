@@ -27,7 +27,8 @@ values."
      auto-completion
      better-defaults
      emacs-lisp
-     org
+     (org :variables
+          org-enable-github-support t)
      git
      github
      markdown
@@ -308,6 +309,14 @@ layers configuration. You are free to put any user code."
 
 ;; This may speed up emacs rendering slightly
 (setq redisplay-dont-pause t)
+
+;; Org Mode Config
+
+;; Spacemacs Org uses an org mode that is not shipped with emacs so we need to
+;; wait until org is loaded before running any configs.
+(with-eval-after-load 'org
+
+  )
 
 ;; Start the emacs server
 (server-start)
