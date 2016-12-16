@@ -28,11 +28,12 @@ values."
      better-defaults
      emacs-lisp
      org
+     deft
      git
      github
      markdown
      clojure
-     python
+     lispy
      html
      erc
      (shell :variables
@@ -86,11 +87,11 @@ values."
    ;; Press <SPC> T n to cycle to the next theme in the list (works great
    ;; with 2 themes variants, one dark and one light)
    dotspacemacs-themes '(
+                         leuven
                          jbeans
-                         dichromancy
+                         dichromacy
                          twilight-anti-bright
                          spacemacs-dark
-                         leuven
                          spacemacs-light
                          ;; stekene-dark
                          ;; minimal
@@ -106,7 +107,7 @@ values."
    ;; Default font. `powerline-scale' allows to quickly tweak the mode-line
    ;; size to make separators look not too crappy.
    dotspacemacs-default-font '("Source Code Pro"
-                               :size 13
+                               :size 12
                                :weight normal
                                :width normal
                                :powerline-scale 1.1)
@@ -248,6 +249,18 @@ layers configuration. You are free to put any user code."
 ;; (define-key evil-motion-state-map (kbd "C-M-j") 'backward-word)
 ;; (define-key evil-motion-state-map (kbd "C-M-;") 'forward-word)
 
+;; C-j default is electric-newline-and-maybe-indent. Vim has o and O
+(define-key evil-insert-state-map (kbd "C-j") 'evil-next-line)
+
+;; C-k default is kill-line. Vim mode has dd
+(define-key evil-insert-state-map (kbd "C-k" ) 'evil-previous-line)
+
+;; C-h <Rte> default is view-order-manuals. Vim has SPC h ...
+(define-key evil-insert-state-map (kbd "C-h" ) 'evil-backward-char)
+
+;; C-l default is recenter-top-bottom. Vim has H, M, L
+(define-key evil-insert-state-map (kbd "C-l" ) 'evil-forward-char)
+
 ;; (define-key evil-insert-state-map (kbd "C-k") 'evil-next-line)
 ;; (define-key evil-insert-state-map (kbd "C-l" ) 'evil-previous-line)
 ;; (define-key evil-insert-state-map (kbd "C-j" ) 'evil-backward-char)
@@ -284,7 +297,7 @@ layers configuration. You are free to put any user code."
 ;; (setq cider-show-error-buffer nil)
 
 ;; Enable error buffer popping also in the REPL:
-(setq cider-repl-popup-stacktraces t)
+(setq cider-show-error-buffer 'except-in-repl)
 
 ;; To auto-select the error buffer when it's displayed:
 ;; (setq cider-auto-select-error-buffer t)
@@ -301,7 +314,10 @@ layers configuration. You are free to put any user code."
 ;; To store the REPL history in a file:
 ;; (setq cider-repl-history-file "~/.emacs.d/personal/nrepl-history")
 
-(setq cider-cljs-lein-repl "(do (use 'figwheel-sidecar.repl-api) (start-figwheel!) (cljs-repl))")
+(setq cider-cljs-lein-repl
+      "(do (require 'figwheel-sidecar.repl-api)
+(figwheel-sidecar.repl-api/start-figwheel!)
+(figwheel-sidecar.repl-api/cljs-repl))")
 
 ;; Enable camelCase filename support
 (add-hook 'cider-repl-mode-hook 'subword-mode)
@@ -309,9 +325,30 @@ layers configuration. You are free to put any user code."
 ;; This may speed up emacs rendering slightly
 (setq redisplay-dont-pause t)
 
-;; Start the emacs server
-(server-start)
+;; Org Mode Configuration
+;; Spacemacs doesn't use standard org so this ensures that
+;; the right org is loaded before we add configuration items
+(with-eval-after-load 'org
+  (setq org-agenda-files '( "~/Dropbox/org" ))
+  (setq org-directory "~/Dropbox/org" )
+  (setq org-default-notes-file (concat org-directory "/organizer.org"))
+  (setq org-agenda-include-diary t)
+  (setq org-todo-keywords '("TODO" "STARTED" "WAITING" "DONE"))
+  (setq org-agenda-include-all-todo t)
 )
+
+;; Deft Config
+(setq deft-directory "~/Dropbox/org")
+(setq deft-extension "org")
+(setq deft-text-mode 'org-mode)
+(setq deft-use-filename-as-title t)
+(setq deft-auto-save-interval 0)
+
+;; Start the emacs server
+;; This may be unnecessary - Spacemacs starts a server
+;; (server-start)
+)
+
 
 ;; Do not write anything past this comment. This is where Emacs will
 ;; auto-generate custom variable definitions.
@@ -328,6 +365,13 @@ layers configuration. You are free to put any user code."
    "(do (require 'weasel.repl.websocket) (cemerick.piggieback/cljs-repl (weasel.repl.websocket/repl-env :ip \"127.0.0.1\" :port 9001)))")
  '(evil-want-Y-yank-to-eol t)
  '(exec-path-from-shell-check-startup-files nil)
+ '(org-agenda-files
+   (quote
+    ("~/Dropbox/org/TODO.org"
+     #("~/Dropbox/org/organizer.org" 2 5
+       (face flx-highlight-face)
+       10 13
+       (face flx-highlight-face)))))
  '(rcirc-server-alist (quote (("irc.freenode.net" :channels ("#clojure"))))))
 (custom-set-faces
  ;; custom-set-faces was added by Custom.
@@ -335,4 +379,5 @@ layers configuration. You are free to put any user code."
  ;; Your init file should contain only one such instance.
  ;; If there is more than one, they won't work right.
  '(company-tooltip-common ((t (:inherit company-tooltip :weight bold :underline nil))))
- '(company-tooltip-common-selection ((t (:inherit company-tooltip-selection :weight bold :underline nil)))))
+ '(company-tooltip-common-selection ((t (:inherit company-tooltip-selection :weight bold :underline nil))))
+ '(sp-show-pair-match-face ((t (:underline "dark blue")))))
