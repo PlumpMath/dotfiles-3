@@ -27,8 +27,9 @@ values."
      auto-completion
      better-defaults
      emacs-lisp
-     org
      deft
+     (org :variables
+          org-enable-github-support t)
      git
      github
      markdown
@@ -326,8 +327,8 @@ layers configuration. You are free to put any user code."
 (setq redisplay-dont-pause t)
 
 ;; Org Mode Configuration
-;; Spacemacs doesn't use standard org so this ensures that
-;; the right org is loaded before we add configuration items
+;; Spacemacs Org uses an org mode that is not shipped with emacs so we need to
+;; wait until org is loaded before running any configs.
 (with-eval-after-load 'org
   (setq org-agenda-files '( "~/Dropbox/org" ))
   (setq org-directory "~/Dropbox/org" )
@@ -359,8 +360,6 @@ layers configuration. You are free to put any user code."
  ;; If there is more than one, they won't work right.
  '(ansi-color-faces-vector
    [default default default italic underline success warning error])
- '(ansi-color-names-vector
-   ["black" "red3" "ForestGreen" "yellow3" "blue" "magenta3" "DeepSkyBlue" "gray50"])
  '(cider-cljs-lein-repl
    "(do (require 'weasel.repl.websocket) (cemerick.piggieback/cljs-repl (weasel.repl.websocket/repl-env :ip \"127.0.0.1\" :port 9001)))")
  '(evil-want-Y-yank-to-eol t)
