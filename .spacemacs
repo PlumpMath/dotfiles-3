@@ -390,6 +390,10 @@ opposite of what that option dictates."
 ;; Start the emacs server
 ;; This may be unnecessary - Spacemacs starts a server
 ;; (server-start)
+
+;; Make emacs scrolling less jumpy
+(setq mouse-wheel-scroll-amount '(2 ((shift) . 1))) ;; two lines at a time
+(setq mouse-wheel-progressive-speed nil) ;; don't accelerate scrolling
 )
 
 
