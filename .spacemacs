@@ -320,6 +320,48 @@ layers configuration. You are free to put any user code."
 (figwheel-sidecar.repl-api/start-figwheel!)
 (figwheel-sidecar.repl-api/cljs-repl))")
 
+;; Grab symbol at point for cider lookups
+(setq cider-prompt-for-symbol t)
+
+;; Get Cider to search clojuredocs web page
+(defconst cider-clojuredocs-url "http://clojuredocs.org/")
+
+(defun cider-clojuredocs-url (name ns)
+  "Generate a clojuredocs search url from NAME, NS."
+  (let ((base-url cider-clojuredocs-url))
+    (when (and name ns)
+      (concat base-url ns "/" name))))
+
+(defun cider-clojuredocs-web-lookup (symbol)
+  "Open the clojuredocs documentation for SYMBOL in a web browser."
+  (if-let ((var-info (cider-var-info symbol)))
+      (let ((name (nrepl-dict-get var-info "name"))
+            (ns (nrepl-dict-get var-info "ns")))
+        (browse-url (cider-clojuredocs-url name ns)))
+    (error "Symbol %s not resolved" symbol)))
+
+;;;###autoload
+(defun cider-clojuredocs-web (&optional arg)
+  "Open clojuredocs documentation in the default web browser.
+Prompts for the symbol to use, or uses the symbol at point, depending on
+the value of `cider-prompt-for-symbol'.  With prefix arg ARG, does the
+opposite of what that option dictates."
+  (interactive "P")
+  (funcall (cider-prompt-for-symbol-function arg)
+           "Clojuredocs doc for"
+           #'cider-clojuredocs-web-lookup))
+
+;; Add bindings for clojuredocs lookup
+(with-eval-after-load 'cider
+  (dolist (m '(clojure-mode
+               clojurec-mode
+               clojurescript-mode
+               clojurex-mode
+               cider-repl-mode
+               cider-clojure-interaction-mode))
+    (spacemacs/set-leader-keys-for-major-mode m
+      "hw" 'cider-clojuredocs-web)))
+
 ;; Enable camelCase filename support
 (add-hook 'cider-repl-mode-hook 'subword-mode)
 
