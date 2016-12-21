@@ -226,6 +226,12 @@ user code."
   "Configuration function for user code.
 This function is called at the very end of Spacemacs initialization after
 layers configuration. You are free to put any user code."
+
+;; Make the Powerline a little prettier
+(setq powerline-default-separator 'utf-8)
+
+  ;; Keyboard Shortcuts
+  ;; =====================
   ;; C = 'control' = control
   ;; M = 'meta' = alt
   ;; s = 'super' = command (next to space bar on mac)
