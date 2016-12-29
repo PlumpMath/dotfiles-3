@@ -47,6 +47,7 @@ values."
                        auto-completion-enable-sort-by-usage t)
      better-defaults
      emacs-lisp
+     deft
      (org :variables
           org-enable-github-support t)
      git
@@ -54,7 +55,6 @@ values."
      markdown
      clojure
      lispy
-     python
      html
      erc
      (shell :variables
@@ -158,7 +158,7 @@ values."
    ;; Default font. `powerline-scale' allows to quickly tweak the mode-line
    ;; size to make separators look not too crappy.
    dotspacemacs-default-font '("Source Code Pro"
-                               :size 11
+                               :size 12
                                :weight normal
                                :width normal
                                :powerline-scale 1.1)
@@ -329,11 +329,26 @@ layers configuration. You are free to put any user code."
 
 (add-to-list 'auto-mode-alist '("\\.xml\\'" . html-mode))
 
+;; Make the Powerline a little prettier
+(setq powerline-default-separator 'utf-8)
+
 ;; Change the leuven theme cursor to a dark color
+
 ;; (custom-theme-set-faces
 ;;    'leuven
 ;;    `(cursor ((,class (:background "#212121")))))
 
+;; C = 'control' = control
+;; M = 'meta' = alt
+;; s = 'super' = command (next to space bar on mac)
+;; S = 'shift' = shift
+;; H = 'hyper' = not bound by default
+;;
+;; To bind keys in hybrid mode use evil-hybrid-state-map
+;; E.g. (define-key evil-hybrid-state-map (kbd "C-w") 'some-function-name)
+;;
+;; Keyboard Shortcuts
+;; =====================
 ;; C = 'control' = control
 ;; M = 'meta' = alt
 ;; s = 'super' = command (next to space bar on mac)
@@ -361,6 +376,23 @@ layers configuration. You are free to put any user code."
 (define-key evil-insert-state-map (kbd "C-k" ) 'previous-line)
 (define-key evil-insert-state-map (kbd "C-h" ) 'backward-char)
 (define-key evil-insert-state-map (kbd "C-l" ) 'forward-char)
+
+;; C-j default is electric-newline-and-maybe-indent. Vim has o and O
+(define-key evil-insert-state-map (kbd "C-j") 'evil-next-line)
+
+;; C-k default is kill-line. Vim mode has dd
+(define-key evil-insert-state-map (kbd "C-k" ) 'evil-previous-line)
+
+;; C-h <Rte> default is view-order-manuals. Vim has SPC h ...
+(define-key evil-insert-state-map (kbd "C-h" ) 'evil-backward-char)
+
+;; C-l default is recenter-top-bottom. Vim has H, M, L
+(define-key evil-insert-state-map (kbd "C-l" ) 'evil-forward-char)
+
+;; (define-key evil-insert-state-map (kbd "C-k") 'evil-next-line)
+;; (define-key evil-insert-state-map (kbd "C-l" ) 'evil-previous-line)
+;; (define-key evil-insert-state-map (kbd "C-j" ) 'evil-backward-char)
+;; (define-key evil-insert-state-map (kbd "C-;" ) 'evil-forward-char)
 ;; (define-key evil-insert-state-map (kbd "C-'" ) 'move-end-of-line)
 ;; (define-key evil-insert-state-map (kbd "C-f" ) 'evil-beginning-of-line)
 ;; (define-key evil-insert-state-map (kbd "C-M-h") 'backward-word)
@@ -409,6 +441,9 @@ layers configuration. You are free to put any user code."
 ;; Don't auto-select the error buffer when it's displayed:
 (setq cider-auto-select-error-buffer nil)
 
+;; To auto-select the error buffer when it's displayed:
+;; (setq cider-auto-select-error-buffer t)
+
 ;; Syntax highlight cider overlays
 (setq cider-overlays-use-font-lock t)
 
@@ -421,7 +456,52 @@ layers configuration. You are free to put any user code."
 ;; To store the REPL history in a file:
 ;; (setq cider-repl-history-file "~/.emacs.d/personal/nrepl-history")
 
-(setq cider-cljs-lein-repl "(do (use 'figwheel-sidecar.repl-api) (start-figwheel!) (cljs-repl))")
+(setq cider-cljs-lein-repl
+      "(do (require 'figwheel-sidecar.repl-api)
+(figwheel-sidecar.repl-api/start-figwheel!)
+(figwheel-sidecar.repl-api/cljs-repl))")
+
+;; Grab symbol at point for cider lookups
+(setq cider-prompt-for-symbol t)
+
+;; Get Cider to search clojuredocs web page
+(defconst cider-clojuredocs-url "http://clojuredocs.org/")
+
+(defun cider-clojuredocs-url (name ns)
+  "Generate a clojuredocs search url from NAME, NS."
+  (let ((base-url cider-clojuredocs-url))
+    (when (and name ns)
+      (concat base-url ns "/" name))))
+
+(defun cider-clojuredocs-web-lookup (symbol)
+  "Open the clojuredocs documentation for SYMBOL in a web browser."
+  (if-let ((var-info (cider-var-info symbol)))
+      (let ((name (nrepl-dict-get var-info "name"))
+            (ns (nrepl-dict-get var-info "ns")))
+        (browse-url (cider-clojuredocs-url name ns)))
+    (error "Symbol %s not resolved" symbol)))
+
+;;;###autoload
+(defun cider-clojuredocs-web (&optional arg)
+  "Open clojuredocs documentation in the default web browser.
+Prompts for the symbol to use, or uses the symbol at point, depending on
+the value of `cider-prompt-for-symbol'.  With prefix arg ARG, does the
+opposite of what that option dictates."
+  (interactive "P")
+  (funcall (cider-prompt-for-symbol-function arg)
+           "Clojuredocs doc for"
+           #'cider-clojuredocs-web-lookup))
+
+;; Add bindings for clojuredocs lookup
+(with-eval-after-load 'cider
+  (dolist (m '(clojure-mode
+               clojurec-mode
+               clojurescript-mode
+               clojurex-mode
+               cider-repl-mode
+               cider-clojure-interaction-mode))
+    (spacemacs/set-leader-keys-for-major-mode m
+      "hw" 'cider-clojuredocs-web)))
 
 ;; Enable camelCase filename support
 (add-hook 'cider-repl-mode-hook 'subword-mode)
@@ -432,15 +512,34 @@ layers configuration. You are free to put any user code."
 ;; This may speed up emacs rendering slightly
 (setq redisplay-dont-pause t)
 
-;; Org Mode Config
-
+;; Org Mode Configuration
 ;; Spacemacs Org uses an org mode that is not shipped with emacs so we need to
 ;; wait until org is loaded before running any configs.
 (with-eval-after-load 'org
   (setq org-startup-indented 1)
-  )
+  (setq org-agenda-files '( "~/Dropbox/org" ))
+  (setq org-directory "~/Dropbox/org" )
+  (setq org-default-notes-file (concat org-directory "/organizer.org"))
+  (setq org-agenda-include-diary t)
+  (setq org-todo-keywords '("TODO" "STARTED" "WAITING" "DONE"))
+  (setq org-agenda-include-all-todo t)
+)
 
-) ;; end of user-config
+;; Deft Config
+(setq deft-directory "~/Dropbox/org")
+(setq deft-extension "org")
+(setq deft-text-mode 'org-mode)
+(setq deft-use-filename-as-title t)
+(setq deft-auto-save-interval 0)
+
+;; Start the emacs server
+;; This may be unnecessary - Spacemacs starts a server
+;; (server-start)
+
+;; Make emacs scrolling less jumpy
+(setq mouse-wheel-scroll-amount '(2 ((shift) . 1))) ;; two lines at a time
+(setq mouse-wheel-progressive-speed nil) ;; don't accelerate scrolling
+
 
 ;; Do not write anything past this comment. This is where Emacs will
 ;; auto-generate custom variable definitions.
@@ -455,14 +554,21 @@ layers configuration. You are free to put any user code."
    "(do (require 'weasel.repl.websocket) (cemerick.piggieback/cljs-repl (weasel.repl.websocket/repl-env :ip \"127.0.0.1\" :port 9001)))")
  '(evil-want-Y-yank-to-eol t)
  '(exec-path-from-shell-check-startup-files nil)
- '(package-selected-packages
+ '(org-agenda-files
    (quote
     (lispyville evil-lispy lispy zoutline swiper ivy command-log-mode hide-comnt ranger pug-mode goto-chg diminish seq yapfify py-isort ox-gfm osx-dictionary dumb-jump undo-tree powerline alert log4e gntp parent-mode gh marshal logito pcache ht flx magit-popup git-commit with-editor smartparens iedit web-completion-data pos-tip hydra inflections edn multiple-cursors paredit peg eval-sexp-fu spinner queue pkg-info clojure-mode epl yasnippet packed pythonic f avy async auto-complete popup bind-map projectile xterm-color ws-butler uuidgen restart-emacs railscasts-theme py-yapf persp-mode orgit org org-projectile org-download omtose-phellack-theme mwim monokai-theme majapahit-theme lorem-ipsum live-py-mode link-hint hl-todo help-fns+ github-search github-clone git-gutter-fringe+ git-gutter-fringe fringe-helper git-gutter+ git-gutter flyspell-correct-helm flyspell-correct farmhouse-theme eyebrowse evil-visual-mark-mode evil-unimpaired evil-magit evil-indent-plus evil-ediff eshell-z dracula-theme darkokai-theme column-enforce-mode clojure-snippets bracketed-paste badwolf-theme ace-jump-helm-line markdown-mode flycheck cider company highlight anzu request helm gitignore-mode helm-core magit evil package-build bind-key s dash zonokai-theme zenburn-theme zen-and-art-theme web-mode underwater-theme ujelly-theme twilight-theme twilight-bright-theme twilight-anti-bright-theme tronesque-theme toxi-theme tao-theme tangotango-theme tango-plus-theme tango-2-theme tagedit sunny-day-theme sublime-themes subatomic256-theme subatomic-theme stekene-theme spacegray-theme soothe-theme soft-stone-theme soft-morning-theme soft-charcoal-theme smyx-theme slim-mode shell-pop seti-theme scss-mode sass-mode reverse-theme reveal-in-osx-finder pyvenv pytest pyenv-mode purple-haze-theme professional-theme planet-theme pip-requirements phoenix-dark-pink-theme phoenix-dark-mono-theme pbcopy pastels-on-dark-theme osx-trash organic-green-theme oldlace-theme occidental-theme obsidian-theme noctilux-theme niflheim-theme naquadah-theme mustang-theme multi-term monochrome-theme molokai-theme moe-theme minimal-theme material-theme magit-gh-pulls lush-theme light-soap-theme less-css-mode launchctl jazz-theme jade-mode ir-black-theme inkpot-theme hy-mode heroku-theme hemisu-theme helm-pydoc helm-flyspell helm-css-scss hc-zenburn-theme haml-mode gruvbox-theme gruber-darker-theme grandshell-theme gotham-theme github-browse-file git-link gist gandalf-theme flatui-theme flatland-theme firebelly-theme espresso-theme eshell-prompt-extras esh-help erc-yt erc-view-log erc-terminal-notifier erc-social-graph erc-image erc-hl-nicks emmet-mode django-theme darktooth-theme darkmine-theme darkburn-theme dakrone-theme cython-mode cyberpunk-theme company-web company-anaconda colorsarenice-theme color-theme-sanityinc-tomorrow color-theme-sanityinc-solarized clues-theme cherry-blossom-theme busybee-theme bubbleberry-theme birds-of-paradise-plus-theme apropospriate-theme anti-zenburn-theme anaconda-mode ample-zen-theme ample-theme alect-themes afternoon-theme jbeans-theme window-numbering which-key volatile-highlights vi-tilde-fringe use-package toc-org spray spacemacs-theme spaceline smooth-scrolling smeargle rainbow-delimiters quelpa popwin pcre2el paradox page-break-lines org-repo-todo org-present org-pomodoro org-plus-contrib org-bullets open-junk-file neotree move-text mmm-mode markdown-toc magit-gitflow macrostep linum-relative leuven-theme info+ indent-guide ido-vertical-mode hungry-delete htmlize highlight-parentheses highlight-numbers highlight-indentation helm-themes helm-swoop helm-projectile helm-mode-manager helm-make helm-gitignore helm-flx helm-descbinds helm-company helm-c-yasnippet helm-ag google-translate golden-ratio gnuplot gitconfig-mode gitattributes-mode git-timemachine git-messenger gh-md flycheck-pos-tip flx-ido fill-column-indicator fancy-battery expand-region exec-path-from-shell evil-visualstar evil-tutor evil-surround evil-search-highlight-persist evil-numbers evil-nerd-commenter evil-mc evil-matchit evil-lisp-state evil-jumper evil-indent-textobject evil-iedit-state evil-exchange evil-escape evil-args evil-anzu elisp-slime-nav diff-hl define-word company-statistics company-quickhelp clj-refactor clean-aindent-mode cider-eval-sexp-fu buffer-move auto-yasnippet auto-highlight-symbol auto-dictionary auto-compile align-cljlet aggressive-indent adaptive-wrap ace-window ace-link ac-ispell)))
+    ("~/Dropbox/org/TODO.org"
+     #("~/Dropbox/org/organizer.org" 2 5
+       (face flx-highlight-face)
+       10 13
+       (face flx-highlight-face)))))
  '(rcirc-server-alist (quote (("irc.freenode.net" :channels ("#clojure"))))))
-
 (custom-set-faces
  ;; custom-set-faces was added by Custom.
  ;; If you edit it by hand, you could mess it up, so be careful.
  ;; Your init file should contain only one such instance.
  ;; If there is more than one, they won't work right.
  '(sp-show-pair-match-face ((t (:underline "Blue")))))
+ '(company-tooltip-common ((t (:inherit company-tooltip :weight bold :underline nil))))
+ '(company-tooltip-common-selection ((t (:inherit company-tooltip-selection :weight bold :underline nil))))
+ '(sp-show-pair-match-face ((t (:underline "dark blue")))))
