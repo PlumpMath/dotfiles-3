@@ -121,7 +121,7 @@ values."
    ;; by your Emacs build.
    ;; If the value is nil then no banner is displayed. (default 'official)
    ;; dotspacemacs-startup-banner 'official
-   dotspacemacs-startup-banner nil
+   dotspacemacs-startup-banner 'official 
    ;; List of items to show in the startup buffer. If nil it is disabled.
    ;; Possible values are: `recents' `bookmarks' `projects'.
    ;; (default '(recents projects))
@@ -422,6 +422,16 @@ layers configuration. You are free to put any user code."
 
 ;;; ### Cider - Clojure Mode for Emacs
 
+;; Make SPC e e work as expected when the cursor is on the last paren.
+
+(defadvice cider-last-sexp (around evil activate)
+  "In normal-state or motion-state, last sexp ends at point."
+  (if (or (evil-normal-state-p) (evil-motion-state-p))
+      (save-excursion
+        (unless (or (eobp) (eolp)) (forward-char))
+        ad-do-it)
+    ad-do-it))
+
 ;; Disable smartparens highlighting everywhere which highlights matching parens
 ;; (with-eval-after-load 'smartparens
 ;;   (show-smartparens-global-mode -1))
@@ -433,7 +443,7 @@ layers configuration. You are free to put any user code."
 (setq nrepl-hide-special-buffers t)
 
 ;; Prevent the auto-display of the REPL buffer in a separate window after connection
-;; (setq cider-repl-pop-to-buffer-on-connect t)
+(setq cider-repl-pop-to-buffer-on-connect t)
 
 ;; Show the error buffer except when working in the repl:
 (setq cider-show-error-buffer 'except-in-repl)
@@ -467,9 +477,18 @@ layers configuration. You are free to put any user code."
 ;; Get Cider to search clojuredocs web page
 (defconst cider-clojuredocs-url "http://clojuredocs.org/")
 
+;; Clojurescript search url
+(defconst cider-cljsdocs-url "http://cljs.github.io/api/")
+
 (defun cider-clojuredocs-url (name ns)
   "Generate a clojuredocs search url from NAME, NS."
   (let ((base-url cider-clojuredocs-url))
+    (when (and name ns)
+      (concat base-url ns "/" name))))
+
+(defun cider-cljsdocs-url (name ns)
+  "Generate a clojurescript search url from NAME, NS."
+  (let ((base-url cider-cljsdocs-url))
     (when (and name ns)
       (concat base-url ns "/" name))))
 
@@ -478,7 +497,9 @@ layers configuration. You are free to put any user code."
   (if-let ((var-info (cider-var-info symbol)))
       (let ((name (nrepl-dict-get var-info "name"))
             (ns (nrepl-dict-get var-info "ns")))
-        (browse-url (cider-clojuredocs-url name ns)))
+        (browse-url (if (string-match "cljs" ns)
+                        (cider-cljsdocs-url name ns)
+                      (cider-clojuredocs-url name ns))))
     (error "Symbol %s not resolved" symbol)))
 
 ;;;###autoload
